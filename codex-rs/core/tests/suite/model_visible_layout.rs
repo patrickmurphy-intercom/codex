@@ -100,6 +100,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
     wait_for_event(&test.codex, |event| {
@@ -122,6 +123,7 @@ async fn snapshot_model_visible_layout_turn_overrides() -> Result<()> {
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: Some(Personality::Friendly),
+            service_tier: None,
         })
         .await?;
     wait_for_event(&test.codex, |event| {
@@ -199,6 +201,7 @@ async fn snapshot_model_visible_layout_cwd_change_does_not_refresh_agents() -> R
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
     wait_for_event(&test.codex, |event| {
@@ -221,6 +224,7 @@ async fn snapshot_model_visible_layout_cwd_change_does_not_refresh_agents() -> R
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
     wait_for_event(&test.codex, |event| {
@@ -326,6 +330,7 @@ async fn snapshot_model_visible_layout_resume_with_personality_change() -> Resul
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: Some(Personality::Friendly),
+            service_tier: None,
         })
         .await?;
     wait_for_event(&resumed.codex, |event| {
@@ -414,6 +419,7 @@ async fn snapshot_model_visible_layout_resume_override_matches_rollout_model() -
             summary: None,
             collaboration_mode: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
     resumed

@@ -394,6 +394,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
             summary: Some(ReasoningSummary::Detailed),
             collaboration_mode: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
 
@@ -475,6 +476,7 @@ async fn override_before_first_turn_emits_environment_context() -> anyhow::Resul
             summary: None,
             collaboration_mode: Some(collaboration_mode),
             personality: None,
+            service_tier: None,
         })
         .await?;
 
@@ -650,6 +652,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
             collaboration_mode: None,
             final_output_json_schema: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
     wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
@@ -765,6 +768,7 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
             collaboration_mode: None,
             final_output_json_schema: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
     wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
@@ -784,6 +788,7 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
             collaboration_mode: None,
             final_output_json_schema: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
     wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
@@ -879,6 +884,7 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
             collaboration_mode: None,
             final_output_json_schema: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
     wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
@@ -898,6 +904,7 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
             collaboration_mode: None,
             final_output_json_schema: None,
             personality: None,
+            service_tier: None,
         })
         .await?;
     wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;

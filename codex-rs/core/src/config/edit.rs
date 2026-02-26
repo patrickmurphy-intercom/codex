@@ -5,6 +5,7 @@ use crate::path_utils::write_atomically;
 use anyhow::Context;
 use codex_config::CONFIG_TOML_FILE;
 use codex_protocol::config_types::Personality;
+use codex_protocol::config_types::ServiceTier;
 use codex_protocol::config_types::TrustLevel;
 use codex_protocol::openai_models::ReasoningEffort;
 use std::collections::BTreeMap;
@@ -27,6 +28,8 @@ pub enum ConfigEdit {
     },
     /// Update the active (or default) model personality.
     SetModelPersonality { personality: Option<Personality> },
+    /// Update the active (or default) service tier.
+    SetModelServiceTier { service_tier: Option<ServiceTier> },
     /// Toggle the acknowledgement flag under `[notice]`.
     SetNoticeHideFullAccessWarning(bool),
     /// Toggle the Windows world-writable directories warning acknowledgement flag.
@@ -303,6 +306,10 @@ impl ConfigDocument {
             ConfigEdit::SetModelPersonality { personality } => Ok(self.write_profile_value(
                 &["personality"],
                 personality.map(|personality| value(personality.to_string())),
+            )),
+            ConfigEdit::SetModelServiceTier { service_tier } => Ok(self.write_profile_value(
+                &["model_service_tier"],
+                service_tier.map(|tier| value(tier.to_string())),
             )),
             ConfigEdit::SetNoticeHideFullAccessWarning(acknowledged) => Ok(self.write_value(
                 Scope::Global,
@@ -750,6 +757,12 @@ impl ConfigEditsBuilder {
     pub fn set_personality(mut self, personality: Option<Personality>) -> Self {
         self.edits
             .push(ConfigEdit::SetModelPersonality { personality });
+        self
+    }
+
+    pub fn set_service_tier(mut self, service_tier: Option<ServiceTier>) -> Self {
+        self.edits
+            .push(ConfigEdit::SetModelServiceTier { service_tier });
         self
     }
 

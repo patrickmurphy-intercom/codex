@@ -76,6 +76,7 @@ use codex_protocol::config_types::CollaborationMode;
 use codex_protocol::config_types::CollaborationModeMask;
 use codex_protocol::config_types::ModeKind;
 use codex_protocol::config_types::Personality;
+use codex_protocol::config_types::ServiceTier as ServiceTierConfig;
 use codex_protocol::config_types::Settings;
 #[cfg(target_os = "windows")]
 use codex_protocol::config_types::WindowsSandboxLevel;
@@ -147,6 +148,7 @@ use ratatui::style::Modifier;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
+use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use ratatui::widgets::Wrap;
 use tokio::sync::mpsc::UnboundedSender;
@@ -658,6 +660,7 @@ pub(crate) struct ChatWidget {
     current_rollout_path: Option<PathBuf>,
     // Current working directory (if known)
     current_cwd: Option<PathBuf>,
+    service_tier: Option<ServiceTierConfig>,
     // Runtime network proxy bind addresses from SessionConfigured.
     session_network_proxy: Option<codex_protocol::protocol::SessionNetworkProxyRuntime>,
     // Shared latch so we only warn once about invalid status-line item IDs.
@@ -1003,17 +1006,20 @@ impl ChatWidget {
             self.request_status_line_branch(cwd);
         }
 
-        let mut parts = Vec::new();
+        let mut spans: Vec<Span<'static>> = Vec::new();
         for item in items {
-            if let Some(value) = self.status_line_value_for_item(&item) {
-                parts.push(value);
+            if let Some(line) = self.status_line_value_for_item(&item) {
+                if !spans.is_empty() {
+                    spans.push(Span::from(" · "));
+                }
+                spans.extend(line.spans);
             }
         }
 
-        let line = if parts.is_empty() {
+        let line = if spans.is_empty() {
             None
         } else {
-            Some(Line::from(parts.join(" · ")))
+            Some(Line::from(spans))
         };
         self.set_status_line(line);
     }
@@ -1104,6 +1110,7 @@ impl ChatWidget {
         self.forked_from = event.forked_from_id;
         self.current_rollout_path = event.rollout_path.clone();
         self.current_cwd = Some(event.cwd.clone());
+        self.service_tier = self.config.model_service_tier;
         self.config.cwd = event.cwd.clone();
         if let Err(err) = self
             .config
@@ -2783,6 +2790,7 @@ impl ChatWidget {
         let active_cell = Some(Self::placeholder_session_header_cell(&config));
 
         let current_cwd = Some(config.cwd.clone());
+        let initial_service_tier = config.model_service_tier;
         let queued_message_edit_binding =
             queued_message_edit_binding_for_terminal(terminal_info().name);
         let mut widget = Self {
@@ -2864,6 +2872,7 @@ impl ChatWidget {
             feedback_audience,
             current_rollout_path: None,
             current_cwd,
+            service_tier: initial_service_tier,
             session_network_proxy: None,
             status_line_invalid_items_warned,
             status_line_branch: None,
@@ -2956,6 +2965,7 @@ impl ChatWidget {
 
         let active_cell = Some(Self::placeholder_session_header_cell(&config));
         let current_cwd = Some(config.cwd.clone());
+        let initial_service_tier = config.model_service_tier;
 
         let queued_message_edit_binding =
             queued_message_edit_binding_for_terminal(terminal_info().name);
@@ -3038,6 +3048,7 @@ impl ChatWidget {
             feedback_audience,
             current_rollout_path: None,
             current_cwd,
+            service_tier: initial_service_tier,
             session_network_proxy: None,
             status_line_invalid_items_warned,
             status_line_branch: None,
@@ -3122,6 +3133,7 @@ impl ChatWidget {
 
         let queued_message_edit_binding =
             queued_message_edit_binding_for_terminal(terminal_info().name);
+        let initial_service_tier = config.model_service_tier;
         let mut widget = Self {
             app_event_tx: app_event_tx.clone(),
             frame_requester: frame_requester.clone(),
@@ -3201,6 +3213,7 @@ impl ChatWidget {
             feedback_audience,
             current_rollout_path: None,
             current_cwd,
+            service_tier: initial_service_tier,
             session_network_proxy: None,
             status_line_invalid_items_warned,
             status_line_branch: None,
@@ -3458,6 +3471,58 @@ impl ChatWidget {
         false
     }
 
+    fn toggle_priority_tier(&mut self) {
+        if !self.is_session_configured() {
+            self.add_info_message(
+                "Priority tier toggle is disabled until startup completes.".to_string(),
+                None,
+            );
+            return;
+        }
+
+        let priority_enabled = self.service_tier == Some(ServiceTierConfig::Priority);
+        let next_service_tier = if priority_enabled {
+            None
+        } else {
+            Some(ServiceTierConfig::Priority)
+        };
+
+        let updated = self.submit_op(Op::OverrideTurnContext {
+            cwd: None,
+            approval_policy: None,
+            sandbox_policy: None,
+            windows_sandbox_level: None,
+            model: None,
+            effort: None,
+            summary: None,
+            collaboration_mode: None,
+            personality: None,
+            service_tier: Some(next_service_tier),
+        });
+
+        if updated {
+            self.service_tier = next_service_tier;
+            self.app_event_tx
+                .send(AppEvent::UpdateServiceTier(next_service_tier));
+            self.app_event_tx
+                .send(AppEvent::PersistServiceTierSelection {
+                    service_tier: next_service_tier,
+                });
+            self.refresh_status_line();
+            if priority_enabled {
+                self.add_info_message(
+                    "Priority processing disabled for subsequent turns.".to_string(),
+                    None,
+                );
+            } else {
+                self.add_info_message(
+                    "Priority processing enabled for subsequent turns.".to_string(),
+                    None,
+                );
+            }
+        }
+    }
+
     fn dispatch_command(&mut self, cmd: SlashCommand) {
         if !cmd.available_during_task() && self.bottom_pane.is_task_running() {
             let message = format!(
@@ -3520,6 +3585,9 @@ impl ChatWidget {
             }
             SlashCommand::Model => {
                 self.open_model_popup();
+            }
+            SlashCommand::Priority => {
+                self.toggle_priority_tier();
             }
             SlashCommand::Realtime => {
                 if !self.realtime_conversation_enabled() {
@@ -4806,34 +4874,44 @@ impl ChatWidget {
     /// Returning `None` means "omit this item for now", not "configuration error". Callers rely on
     /// this to keep partially available status lines readable while waiting for session, token, or
     /// git metadata.
-    fn status_line_value_for_item(&self, item: &StatusLineItem) -> Option<String> {
+    fn status_line_value_for_item(&self, item: &StatusLineItem) -> Option<Line<'static>> {
         match item {
-            StatusLineItem::ModelName => Some(self.model_display_name().to_string()),
+            StatusLineItem::ModelName => Some(Line::from(self.model_display_name().to_string())),
             StatusLineItem::ModelWithReasoning => {
                 let label =
                     Self::status_line_reasoning_effort_label(self.effective_reasoning_effort());
-                Some(format!("{} {label}", self.model_display_name()))
+                let model_with_reasoning = format!("{} {label}", self.model_display_name());
+                if self.service_tier == Some(ServiceTierConfig::Priority) {
+                    Some(Line::from(vec![
+                        Span::from(model_with_reasoning),
+                        Span::from(" "),
+                        Span::styled("↯", Style::default().fg(Color::LightBlue)),
+                    ]))
+                } else {
+                    Some(Line::from(model_with_reasoning))
+                }
             }
-            StatusLineItem::CurrentDir => {
-                Some(format_directory_display(self.status_line_cwd(), None))
-            }
-            StatusLineItem::ProjectRoot => self.status_line_project_root_name(),
-            StatusLineItem::GitBranch => self.status_line_branch.clone(),
+            StatusLineItem::CurrentDir => Some(Line::from(format_directory_display(
+                self.status_line_cwd(),
+                None,
+            ))),
+            StatusLineItem::ProjectRoot => self.status_line_project_root_name().map(Line::from),
+            StatusLineItem::GitBranch => self.status_line_branch.clone().map(Line::from),
             StatusLineItem::UsedTokens => {
                 let usage = self.status_line_total_usage();
                 let total = usage.tokens_in_context_window();
                 if total <= 0 {
                     None
                 } else {
-                    Some(format!("{} used", format_tokens_compact(total)))
+                    Some(Line::from(format!("{} used", format_tokens_compact(total))))
                 }
             }
             StatusLineItem::ContextRemaining => self
                 .status_line_context_remaining_percent()
-                .map(|remaining| format!("{remaining}% left")),
+                .map(|remaining| Line::from(format!("{remaining}% left"))),
             StatusLineItem::ContextUsed => self
                 .status_line_context_used_percent()
-                .map(|used| format!("{used}% used")),
+                .map(|used| Line::from(format!("{used}% used"))),
             StatusLineItem::FiveHourLimit => {
                 let window = self
                     .rate_limit_snapshots_by_limit_id
@@ -4844,6 +4922,7 @@ impl ChatWidget {
                     .map(get_limits_duration)
                     .unwrap_or_else(|| "5h".to_string());
                 self.status_line_limit_display(window, &label)
+                    .map(Line::from)
             }
             StatusLineItem::WeeklyLimit => {
                 let window = self
@@ -4855,20 +4934,21 @@ impl ChatWidget {
                     .map(get_limits_duration)
                     .unwrap_or_else(|| "weekly".to_string());
                 self.status_line_limit_display(window, &label)
+                    .map(Line::from)
             }
-            StatusLineItem::CodexVersion => Some(CODEX_CLI_VERSION.to_string()),
+            StatusLineItem::CodexVersion => Some(Line::from(CODEX_CLI_VERSION.to_string())),
             StatusLineItem::ContextWindowSize => self
                 .status_line_context_window_size()
-                .map(|cws| format!("{} window", format_tokens_compact(cws))),
-            StatusLineItem::TotalInputTokens => Some(format!(
+                .map(|cws| Line::from(format!("{} window", format_tokens_compact(cws)))),
+            StatusLineItem::TotalInputTokens => Some(Line::from(format!(
                 "{} in",
                 format_tokens_compact(self.status_line_total_usage().input_tokens)
-            )),
-            StatusLineItem::TotalOutputTokens => Some(format!(
+            ))),
+            StatusLineItem::TotalOutputTokens => Some(Line::from(format!(
                 "{} out",
                 format_tokens_compact(self.status_line_total_usage().output_tokens)
-            )),
-            StatusLineItem::SessionId => self.thread_id.map(|id| id.to_string()),
+            ))),
+            StatusLineItem::SessionId => self.thread_id.map(|id| Line::from(id.to_string())),
         }
     }
 
@@ -5122,6 +5202,7 @@ impl ChatWidget {
                 summary: None,
                 collaboration_mode: None,
                 personality: None,
+                service_tier: None,
             }));
             tx.send(AppEvent::UpdateModel(switch_model_for_events.clone()));
             tx.send(AppEvent::UpdateReasoningEffort(Some(default_effort)));
@@ -5242,6 +5323,7 @@ impl ChatWidget {
                         collaboration_mode: None,
                         windows_sandbox_level: None,
                         personality: Some(personality),
+                        service_tier: None,
                     }));
                     tx.send(AppEvent::UpdatePersonality(personality));
                     tx.send(AppEvent::PersistPersonalitySelection { personality });
@@ -5999,6 +6081,7 @@ impl ChatWidget {
                 summary: None,
                 collaboration_mode: None,
                 personality: None,
+                service_tier: None,
             }));
             tx.send(AppEvent::UpdateAskForApprovalPolicy(approval));
             tx.send(AppEvent::UpdateSandboxPolicy(sandbox_clone));
@@ -6610,6 +6693,12 @@ impl ChatWidget {
     /// Set the personality in the widget's config copy.
     pub(crate) fn set_personality(&mut self, personality: Personality) {
         self.config.personality = Some(personality);
+    }
+
+    /// Set the service tier in the widget's config copy.
+    pub(crate) fn set_service_tier(&mut self, service_tier: Option<ServiceTierConfig>) {
+        self.config.model_service_tier = service_tier;
+        self.service_tier = service_tier;
     }
 
     /// Set the syntax theme override in the widget's config copy.

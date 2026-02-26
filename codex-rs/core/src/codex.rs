@@ -67,6 +67,7 @@ use codex_protocol::approvals::ExecPolicyAmendment;
 use codex_protocol::approvals::NetworkPolicyAmendment;
 use codex_protocol::approvals::NetworkPolicyRuleAction;
 use codex_protocol::config_types::ModeKind;
+use codex_protocol::config_types::ServiceTier;
 use codex_protocol::config_types::Settings;
 use codex_protocol::config_types::WebSearchMode;
 use codex_protocol::dynamic_tools::DynamicToolResponse;
@@ -428,6 +429,7 @@ impl Codex {
             provider: config.model_provider.clone(),
             collaboration_mode,
             model_reasoning_summary: config.model_reasoning_summary,
+            service_tier: config.model_service_tier,
             developer_instructions: config.developer_instructions.clone(),
             user_instructions,
             personality: config.personality,
@@ -590,6 +592,7 @@ pub(crate) struct TurnContext {
     pub(crate) provider: ModelProviderInfo,
     pub(crate) reasoning_effort: Option<ReasoningEffortConfig>,
     pub(crate) reasoning_summary: ReasoningSummaryConfig,
+    pub(crate) service_tier: Option<ServiceTier>,
     pub(crate) session_source: SessionSource,
     /// The session's current working directory. All relative paths provided by
     /// the model as well as sandbox policies are resolved against this path
@@ -677,6 +680,7 @@ impl TurnContext {
             provider: self.provider.clone(),
             reasoning_effort,
             reasoning_summary: self.reasoning_summary,
+            service_tier: self.service_tier,
             session_source: self.session_source.clone(),
             cwd: self.cwd.clone(),
             developer_instructions: self.developer_instructions.clone(),
@@ -755,6 +759,7 @@ pub(crate) struct SessionConfiguration {
 
     collaboration_mode: CollaborationMode,
     model_reasoning_summary: ReasoningSummaryConfig,
+    service_tier: Option<ServiceTier>,
 
     /// Developer instructions that supplement the base instructions.
     developer_instructions: Option<String>,
@@ -826,6 +831,9 @@ impl SessionConfiguration {
         if let Some(summary) = updates.reasoning_summary {
             next_configuration.model_reasoning_summary = summary;
         }
+        if let Some(service_tier) = updates.service_tier {
+            next_configuration.service_tier = service_tier;
+        }
         if let Some(personality) = updates.personality {
             next_configuration.personality = Some(personality);
         }
@@ -853,6 +861,7 @@ pub(crate) struct SessionSettingsUpdate {
     pub(crate) windows_sandbox_level: Option<WindowsSandboxLevel>,
     pub(crate) collaboration_mode: Option<CollaborationMode>,
     pub(crate) reasoning_summary: Option<ReasoningSummaryConfig>,
+    pub(crate) service_tier: Option<Option<ServiceTier>>,
     pub(crate) final_output_json_schema: Option<Option<Value>>,
     pub(crate) personality: Option<Personality>,
 }
@@ -986,6 +995,7 @@ impl Session {
     ) -> TurnContext {
         let reasoning_effort = session_configuration.collaboration_mode.reasoning_effort();
         let reasoning_summary = session_configuration.model_reasoning_summary;
+        let service_tier = session_configuration.service_tier;
         let otel_manager = otel_manager.clone().with_model(
             session_configuration.collaboration_mode.model(),
             model_info.slug.as_str(),
@@ -1024,6 +1034,7 @@ impl Session {
             provider: provider_for_context,
             reasoning_effort,
             reasoning_summary,
+            service_tier,
             session_source,
             cwd,
             developer_instructions: session_configuration.developer_instructions.clone(),
@@ -3663,6 +3674,7 @@ async fn submission_loop(sess: Arc<Session>, config: Arc<Config>, rx_sub: Receiv
                 summary,
                 collaboration_mode,
                 personality,
+                service_tier,
             } => {
                 let collaboration_mode = if let Some(collab_mode) = collaboration_mode {
                     collab_mode
@@ -3684,6 +3696,7 @@ async fn submission_loop(sess: Arc<Session>, config: Arc<Config>, rx_sub: Receiv
                         windows_sandbox_level,
                         collaboration_mode: Some(collaboration_mode),
                         reasoning_summary: summary,
+                        service_tier,
                         personality,
                         ..Default::default()
                     },
@@ -3905,6 +3918,7 @@ mod handlers {
                         windows_sandbox_level: None,
                         collaboration_mode,
                         reasoning_summary: Some(summary),
+                        service_tier: None,
                         final_output_json_schema: Some(final_output_json_schema),
                         personality,
                     },
@@ -4650,6 +4664,7 @@ async fn spawn_review_thread(
         provider: provider_for_context,
         reasoning_effort,
         reasoning_summary,
+        service_tier: parent_turn_context.service_tier,
         session_source,
         tools_config,
         features: parent_turn_context.features.clone(),
@@ -6180,6 +6195,7 @@ async fn try_run_sampling_request(
             &turn_context.otel_manager,
             turn_context.reasoning_effort,
             turn_context.reasoning_summary,
+            turn_context.service_tier,
             turn_metadata_header,
         )
         .instrument(trace_span!("stream_request"))
@@ -7823,6 +7839,7 @@ mod tests {
             provider: config.model_provider.clone(),
             collaboration_mode,
             model_reasoning_summary: config.model_reasoning_summary,
+            service_tier: None,
             developer_instructions: config.developer_instructions.clone(),
             user_instructions: config.user_instructions.clone(),
             personality: config.personality,
@@ -7915,6 +7932,7 @@ mod tests {
             provider: config.model_provider.clone(),
             collaboration_mode,
             model_reasoning_summary: config.model_reasoning_summary,
+            service_tier: None,
             developer_instructions: config.developer_instructions.clone(),
             user_instructions: config.user_instructions.clone(),
             personality: config.personality,
@@ -8226,6 +8244,7 @@ mod tests {
             provider: config.model_provider.clone(),
             collaboration_mode,
             model_reasoning_summary: config.model_reasoning_summary,
+            service_tier: None,
             developer_instructions: config.developer_instructions.clone(),
             user_instructions: config.user_instructions.clone(),
             personality: config.personality,
@@ -8279,6 +8298,7 @@ mod tests {
             provider: config.model_provider.clone(),
             collaboration_mode,
             model_reasoning_summary: config.model_reasoning_summary,
+            service_tier: None,
             developer_instructions: config.developer_instructions.clone(),
             user_instructions: config.user_instructions.clone(),
             personality: config.personality,
@@ -8360,6 +8380,7 @@ mod tests {
             provider: config.model_provider.clone(),
             collaboration_mode,
             model_reasoning_summary: config.model_reasoning_summary,
+            service_tier: None,
             developer_instructions: config.developer_instructions.clone(),
             user_instructions: config.user_instructions.clone(),
             personality: config.personality,
@@ -8519,6 +8540,7 @@ mod tests {
             provider: config.model_provider.clone(),
             collaboration_mode,
             model_reasoning_summary: config.model_reasoning_summary,
+            service_tier: None,
             developer_instructions: config.developer_instructions.clone(),
             user_instructions: config.user_instructions.clone(),
             personality: config.personality,
