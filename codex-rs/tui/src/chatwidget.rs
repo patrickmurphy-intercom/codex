@@ -150,6 +150,7 @@ use ratatui::style::Modifier;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
+use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use ratatui::widgets::Wrap;
 use tokio::sync::mpsc::UnboundedSender;
@@ -4837,12 +4838,7 @@ impl ChatWidget {
             StatusLineItem::ModelWithReasoning => {
                 let label =
                     Self::status_line_reasoning_effort_label(self.effective_reasoning_effort());
-                let model_with_reasoning = format!("{} {label}", self.model_display_name());
-                if self.service_tier == Some(ServiceTierConfig::Priority) {
-                    Some(format!("{model_with_reasoning} ↯"))
-                } else {
-                    Some(model_with_reasoning)
-                }
+                Some(format!("{} {label}", self.model_display_name()))
             }
             StatusLineItem::CurrentDir => {
                 Some(format_directory_display(self.status_line_cwd(), None))
