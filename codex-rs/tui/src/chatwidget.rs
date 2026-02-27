@@ -165,6 +165,7 @@ const PLAN_MODE_REASONING_SCOPE_TITLE: &str = "Apply reasoning change";
 const PLAN_MODE_REASONING_SCOPE_PLAN_ONLY: &str = "Apply to Plan mode override";
 const PLAN_MODE_REASONING_SCOPE_ALL_MODES: &str = "Apply to global default and Plan mode override";
 const CONNECTORS_SELECTION_VIEW_ID: &str = "connectors-selection";
+const PRIORITY_STATUS_LINE_INDICATOR_BLUE: Color = Color::Rgb(102, 194, 255);
 
 /// Choose the keybinding used to edit the most-recently queued message.
 ///
@@ -4885,7 +4886,12 @@ impl ChatWidget {
                     Some(Line::from(vec![
                         Span::from(model_with_reasoning),
                         Span::from(" "),
-                        Span::styled("↯", Style::default().fg(Color::LightBlue)),
+                        Span::styled(
+                            "↯",
+                            Style::default()
+                                .fg(PRIORITY_STATUS_LINE_INDICATOR_BLUE)
+                                .remove_modifier(Modifier::DIM),
+                        ),
                     ]))
                 } else {
                     Some(Line::from(model_with_reasoning))
