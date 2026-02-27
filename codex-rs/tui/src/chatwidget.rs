@@ -166,6 +166,7 @@ const PLAN_MODE_REASONING_SCOPE_TITLE: &str = "Apply reasoning change";
 const PLAN_MODE_REASONING_SCOPE_PLAN_ONLY: &str = "Apply to Plan mode override";
 const PLAN_MODE_REASONING_SCOPE_ALL_MODES: &str = "Apply to global default and Plan mode override";
 const CONNECTORS_SELECTION_VIEW_ID: &str = "connectors-selection";
+const PRIORITY_STATUS_LINE_INDICATOR_BLUE: Color = Color::Rgb(102, 194, 255);
 
 /// Choose the keybinding used to edit the most-recently queued message.
 ///
@@ -1020,7 +1021,9 @@ impl ChatWidget {
         let line = if parts.is_empty() {
             None
         } else {
-            Some(Line::from(parts.join(" · ")))
+            Some(Self::status_line_with_styled_priority_indicator(
+                parts.join(" · "),
+            ))
         };
         self.set_status_line(line);
     }
@@ -4834,7 +4837,12 @@ impl ChatWidget {
             StatusLineItem::ModelWithReasoning => {
                 let label =
                     Self::status_line_reasoning_effort_label(self.effective_reasoning_effort());
-                Some(format!("{} {label}", self.model_display_name()))
+                let model_with_reasoning = format!("{} {label}", self.model_display_name());
+                if self.service_tier == Some(ServiceTierConfig::Priority) {
+                    Some(format!("{model_with_reasoning} ↯"))
+                } else {
+                    Some(model_with_reasoning)
+                }
             }
             StatusLineItem::CurrentDir => {
                 Some(format_directory_display(self.status_line_cwd(), None))
@@ -4892,6 +4900,32 @@ impl ChatWidget {
             )),
             StatusLineItem::SessionId => self.thread_id.map(|id| id.to_string()),
         }
+    }
+
+    fn status_line_with_styled_priority_indicator(status_line: String) -> Line<'static> {
+        if !status_line.contains('↯') {
+            return Line::from(status_line);
+        }
+
+        let mut spans = Vec::new();
+        let mut remaining = status_line.as_str();
+        while let Some(marker_index) = remaining.find('↯') {
+            let (before, marker_and_after) = remaining.split_at(marker_index);
+            if !before.is_empty() {
+                spans.push(Span::from(before.to_string()));
+            }
+            spans.push(Span::styled(
+                "↯",
+                Style::default()
+                    .fg(PRIORITY_STATUS_LINE_INDICATOR_BLUE)
+                    .remove_modifier(Modifier::DIM),
+            ));
+            remaining = &marker_and_after['↯'.len_utf8()..];
+        }
+        if !remaining.is_empty() {
+            spans.push(Span::from(remaining.to_string()));
+        }
+        Line::from(spans)
     }
 
     fn status_line_context_window_size(&self) -> Option<i64> {
