@@ -5656,7 +5656,6 @@ impl CodexMessageProcessor {
                     summary: params.summary,
                     collaboration_mode,
                     personality: params.personality,
-                    service_tier: None,
                 })
                 .await;
         }

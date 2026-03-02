@@ -100,7 +100,6 @@ async fn user_turn_personality_none_does_not_add_update_message() -> anyhow::Res
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -147,7 +146,6 @@ async fn config_personality_some_sets_instructions_template() -> anyhow::Result<
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -201,7 +199,6 @@ async fn config_personality_none_sends_no_personality() -> anyhow::Result<()> {
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -261,7 +258,6 @@ async fn default_personality_is_pragmatic_without_config_toml() -> anyhow::Resul
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -309,7 +305,6 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -326,7 +321,6 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
             summary: None,
             collaboration_mode: None,
             personality: Some(Personality::Friendly),
-            service_tier: None,
         })
         .await?;
 
@@ -345,7 +339,6 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -408,7 +401,6 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -425,7 +417,6 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
             summary: None,
             collaboration_mode: None,
             personality: Some(Personality::Pragmatic),
-            service_tier: None,
         })
         .await?;
 
@@ -444,7 +435,6 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -517,7 +507,6 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -534,7 +523,6 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
             summary: None,
             collaboration_mode: None,
             personality: Some(Personality::Pragmatic),
-            service_tier: None,
         })
         .await?;
 
@@ -553,7 +541,6 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -662,7 +649,6 @@ async fn remote_model_friendly_personality_instructions_with_feature() -> anyhow
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: Some(Personality::Friendly),
-            service_tier: None,
         })
         .await?;
 
@@ -773,7 +759,6 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -790,7 +775,6 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
             summary: None,
             collaboration_mode: None,
             personality: Some(Personality::Friendly),
-            service_tier: None,
         })
         .await?;
 
@@ -809,7 +793,6 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 

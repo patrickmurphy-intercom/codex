@@ -57,7 +57,6 @@ use codex_otel::OtelManager;
 use codex_otel::TelemetryAuthMode;
 use codex_protocol::ThreadId;
 use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ServiceTier as ServiceTierConfig;
 #[cfg(target_os = "windows")]
 use codex_protocol::config_types::WindowsSandboxLevel;
 use codex_protocol::items::TurnItem;
@@ -2020,10 +2019,6 @@ impl App {
             AppEvent::UpdatePersonality(personality) => {
                 self.on_update_personality(personality);
             }
-            AppEvent::UpdateServiceTier(service_tier) => {
-                self.on_update_service_tier(service_tier);
-                self.refresh_status_line();
-            }
             AppEvent::OpenReasoningPopup { model } => {
                 self.chat_widget.open_reasoning_popup(model);
             }
@@ -2318,7 +2313,6 @@ impl App {
                                         summary: None,
                                         collaboration_mode: None,
                                         personality: None,
-                                        service_tier: None,
                                     },
                                 ));
                                 self.app_event_tx.send(
@@ -2341,7 +2335,6 @@ impl App {
                                         summary: None,
                                         collaboration_mode: None,
                                         personality: None,
-                                        service_tier: None,
                                     },
                                 ));
                                 self.app_event_tx
@@ -2448,29 +2441,6 @@ impl App {
                                 "Failed to save default personality: {err}"
                             ));
                         }
-                    }
-                }
-            }
-            AppEvent::PersistServiceTierSelection { service_tier } => {
-                let profile = self.active_profile.as_deref();
-                if let Err(err) = ConfigEditsBuilder::new(&self.config.codex_home)
-                    .with_profile(profile)
-                    .set_service_tier(service_tier)
-                    .apply()
-                    .await
-                {
-                    tracing::error!(
-                        error = %err,
-                        "failed to persist service tier selection"
-                    );
-                    if let Some(profile) = profile {
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save service tier for profile `{profile}`: {err}"
-                        ));
-                    } else {
-                        self.chat_widget.add_error_message(format!(
-                            "Failed to save default service tier: {err}"
-                        ));
                     }
                 }
             }
@@ -2588,7 +2558,6 @@ impl App {
                                 summary: None,
                                 collaboration_mode: None,
                                 personality: None,
-                                service_tier: None,
                             }));
                     }
                 }
@@ -3129,11 +3098,6 @@ impl App {
     fn on_update_personality(&mut self, personality: Personality) {
         self.config.personality = Some(personality);
         self.chat_widget.set_personality(personality);
-    }
-
-    fn on_update_service_tier(&mut self, service_tier: Option<ServiceTierConfig>) {
-        self.config.model_service_tier = service_tier;
-        self.chat_widget.set_service_tier(service_tier);
     }
 
     fn sync_tui_theme_selection(&mut self, name: String) {

@@ -178,7 +178,6 @@ async fn remote_models_long_model_slug_is_sent_with_high_reasoning() -> Result<(
             summary: config.model_reasoning_summary,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -231,7 +230,6 @@ async fn namespaced_model_slug_uses_catalog_metadata_without_fallback_warning() 
             summary: config.model_reasoning_summary,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -347,7 +345,6 @@ async fn remote_models_remote_model_uses_unified_exec() -> Result<()> {
             summary: None,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -385,7 +382,6 @@ async fn remote_models_remote_model_uses_unified_exec() -> Result<()> {
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -579,7 +575,6 @@ async fn remote_models_apply_remote_base_instructions() -> Result<()> {
             summary: None,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 
@@ -598,7 +593,6 @@ async fn remote_models_apply_remote_base_instructions() -> Result<()> {
             summary: ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
-            service_tier: None,
         })
         .await?;
 

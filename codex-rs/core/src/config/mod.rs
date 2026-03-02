@@ -62,7 +62,6 @@ use codex_protocol::config_types::ForcedLoginMethod;
 use codex_protocol::config_types::Personality;
 use codex_protocol::config_types::ReasoningSummary;
 use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::ServiceTier;
 use codex_protocol::config_types::TrustLevel;
 use codex_protocol::config_types::Verbosity;
 use codex_protocol::config_types::WebSearchMode;
@@ -204,9 +203,6 @@ pub struct Config {
 
     /// Optionally specify the personality of the model
     pub personality: Option<Personality>,
-
-    /// Optional service tier override for Responses API requests.
-    pub model_service_tier: Option<ServiceTier>,
 
     /// Effective permission configuration for shell tool execution.
     pub permissions: Permissions,
@@ -1166,7 +1162,6 @@ pub struct ConfigToml {
     pub model_reasoning_effort: Option<ReasoningEffort>,
     pub plan_mode_reasoning_effort: Option<ReasoningEffort>,
     pub model_reasoning_summary: Option<ReasoningSummary>,
-    pub model_service_tier: Option<ServiceTier>,
     /// Optional verbosity control for GPT-5 models (Responses API `text.verbosity`).
     pub model_verbosity: Option<Verbosity>,
 
@@ -1950,7 +1945,6 @@ impl Config {
                     .enabled(Feature::Personality)
                     .then_some(Personality::Pragmatic)
             });
-        let model_service_tier = config_profile.model_service_tier.or(cfg.model_service_tier);
 
         let experimental_compact_prompt_path = config_profile
             .experimental_compact_prompt_file
@@ -2088,7 +2082,6 @@ impl Config {
             user_instructions,
             base_instructions,
             personality,
-            model_service_tier,
             developer_instructions,
             compact_prompt,
             commit_attribution,

@@ -18,7 +18,6 @@ use crate::config_types::CollaborationMode;
 use crate::config_types::ModeKind;
 use crate::config_types::Personality;
 use crate::config_types::ReasoningSummary as ReasoningSummaryConfig;
-use crate::config_types::ServiceTier;
 use crate::config_types::WindowsSandboxLevel;
 use crate::custom_prompts::CustomPrompt;
 use crate::dynamic_tools::DynamicToolCallOutputContentItem;
@@ -247,13 +246,6 @@ pub enum Op {
         /// Updated personality preference.
         #[serde(skip_serializing_if = "Option::is_none")]
         personality: Option<Personality>,
-
-        /// Updated OpenAI service tier preference.
-        ///
-        /// Use `Some(Some(_))` to set a specific tier, `Some(None)` to clear
-        /// the tier override, or `None` to leave the existing value unchanged.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        service_tier: Option<Option<ServiceTier>>,
     },
 
     /// Approve a command execution
