@@ -258,8 +258,8 @@ mod tests {
             store: false,
             stream: true,
             include: vec![],
-            prompt_cache_key: None,
             service_tier: None,
+            prompt_cache_key: None,
             text: Some(TextControls {
                 verbosity: Some(OpenAiVerbosity::Low),
                 format: None,
@@ -300,8 +300,8 @@ mod tests {
             store: false,
             stream: true,
             include: vec![],
-            prompt_cache_key: None,
             service_tier: None,
+            prompt_cache_key: None,
             text: Some(text_controls),
         };
 
@@ -337,8 +337,8 @@ mod tests {
             store: false,
             stream: true,
             include: vec![],
-            prompt_cache_key: None,
             service_tier: None,
+            prompt_cache_key: None,
             text: None,
         };
 

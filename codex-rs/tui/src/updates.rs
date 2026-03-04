@@ -18,6 +18,9 @@ pub fn get_upgrade_version(config: &Config) -> Option<String> {
     if !config.check_for_update_on_startup {
         return None;
     }
+    if parse_version(CODEX_CLI_VERSION) == Some((0, 0, 0)) {
+        return None;
+    }
 
     let version_file = version_filepath(config);
     let info = read_version_info(&version_file).ok();
@@ -227,5 +230,10 @@ mod tests {
     fn whitespace_is_ignored() {
         assert_eq!(parse_version(" 1.2.3 \n"), Some((1, 2, 3)));
         assert_eq!(is_newer(" 1.2.3 ", "1.2.2"), Some(true));
+    }
+
+    #[test]
+    fn local_workspace_version_skips_update_checks() {
+        assert_eq!(parse_version("0.0.0"), Some((0, 0, 0)));
     }
 }
